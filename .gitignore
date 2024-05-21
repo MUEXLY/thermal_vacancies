@@ -163,3 +163,5 @@ cython_debug/
 log.lammps
 *.pbs
 lmp
+ins_cantor.o*
+ins_cantor.e*
