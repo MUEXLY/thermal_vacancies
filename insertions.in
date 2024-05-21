@@ -1,0 +1,97 @@
+# some default settings
+echo log
+units metal
+newton on
+boundary p p p
+atom_style atomic
+neighbor 1.0 bin
+neigh_modify every 1 delay 5 check yes
+thermo 500
+
+# define output files
+variable output_relaxed string "outputs/relaxed.dat"
+variable output_enthalpy string "outputs/enthalpy.txt"
+variable output_vacant_energy string "outputs/vacant_energy.txt"
+variable output_vacant_volume string "outputs/vacant_volume.txt"
+variable output_occupying_energy string "outputs/occupying_energy.txt"
+variable output_occupying_volume string "outputs/occupying_volume.txt"
+
+# read in configuration, minimize at 0 pressure, rewrite minimized to new file
+read_data init_config.dat
+reset_timestep 0
+
+# get number of type labels
+shell src/get_num_types.sh init_config.dat > atom_types_count
+variable ntypes file atom_types_count
+shell rm atom_types_count
+
+# specify potential
+pair_style meam
+pair_coeff * * library.meam Co Ni Cr Fe Mn CoNiCrFeMn.meam Co Ni Cr Fe Mn
+
+# modifiy read-in configuration and write it somewhere else
+variable temperature equal "temp"
+run 0
+if "${temperature} > 0.0" then "velocity all scale 0.0"
+min_style cg
+min_modify dmax 1.0e-3 line quadratic
+fix press_rel all box/relax iso 0.0 vmax 0.001
+minimize 0.0 1.0e-8 10000 1000000
+set group all image 0 0 0
+write_data ${output_relaxed}
+
+# calculate the enthalpy per atom, print it to a file so we can read it into a post-processing script
+thermo_style custom step temp etotal press vol enthalpy
+variable enthalpy equal "enthalpy/atoms"
+variable energy equal "pe"
+variable volume equal "vol"
+reset_timestep 0
+run 0
+print "# enthalpy per atom" file ${output_enthalpy}
+print "${enthalpy}" append ${output_enthalpy}
+
+# initialize files for vacant energies and occupying energies
+# printing also clears file
+print "# vacant energies" file ${output_vacant_energy}
+print "# vacant volumes" file ${output_vacant_volume}
+print "# occupying energies" file ${output_occupying_energy}
+print "# occupying volumes" file ${output_occupying_volume}
+
+# loop through all sites
+variable num_atoms equal "count(all)"
+
+variable site loop ${num_atoms}
+label insertions_loop
+
+delete_atoms group all
+read_data ${output_relaxed} add merge
+
+# loop through all atom types
+variable energy_line string ""
+variable volume_line string ""
+variable type_label loop ${ntypes}
+label type_loop
+
+# insert type at site, print occupying energy to file
+reset_timestep 0
+set atom ${site} type ${type_label}
+minimize 0.0 1.0e-8 10000 1000000
+variable energy_line string "${energy_line}${energy} "
+variable volume_line string "${volume_line}${volume} "
+
+next type_label
+jump SELF type_loop
+
+print "${energy_line}" append ${output_occupying_energy}
+print "${volume_line}" append ${output_occupying_volume}
+
+# get vacant energy, print vacant energy to file
+reset_timestep 0
+group vacancy id ${site}
+delete_atoms group vacancy
+minimize 0.0 1.0e-8 10000 1000000
+print "${energy}" append ${output_vacant_energy}
+print "${volume}" append ${output_vacant_volume}
+
+next site
+jump SELF insertions_loop

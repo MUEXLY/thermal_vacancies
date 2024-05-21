@@ -1,0 +1,1 @@
+grep -E "^[0-9]+ atom types" $1 | awk '{print $1}'
