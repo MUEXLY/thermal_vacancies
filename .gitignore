@@ -165,3 +165,5 @@ log.lammps
 lmp
 ins_cantor.o*
 ins_cantor.e*
+trash/
+ins_FeCr.o*

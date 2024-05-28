@@ -27,7 +27,7 @@ shell rm atom_types_count
 
 # specify potential
 pair_style meam
-pair_coeff * * library.meam Co Ni Cr Fe Mn CoNiCrFeMn.meam Co Ni Cr Fe Mn
+pair_coeff * * library.meam Co Ni Cr Fe Mn CoNiCrFeMn.meam Fe Cr
 
 # modifiy read-in configuration and write it somewhere else
 variable temperature equal "temp"
@@ -39,6 +39,8 @@ fix press_rel all box/relax iso 0.0 vmax 0.001
 minimize 0.0 1.0e-8 10000 1000000
 set group all image 0 0 0
 write_data ${output_relaxed}
+
+unfix press_rel
 
 # calculate the enthalpy per atom, print it to a file so we can read it into a post-processing script
 thermo_style custom step temp etotal press vol enthalpy
