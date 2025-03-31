@@ -1,6 +1,6 @@
 # thermal_vacancies
 
-This repository computes the concentration of vacancies in an arbitrary crystalline system under thermal conditions using LAMMPS using our paper on impurity concentration [here](https://arxiv.org/abs/2402.07324).
+This repository computes the concentration of vacancies in an arbitrary crystalline system under thermal conditions using LAMMPS using our paper on impurity concentration [here](https://doi.org/10.1103/PhysRevMaterials.9.033803).
 
 The main piece of code is the LAMMPS input file, which performs various atom swaps at each lattice site. To run the example in this repository (concentration in Fe-9%Cr):
 
